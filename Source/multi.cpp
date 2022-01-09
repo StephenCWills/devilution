@@ -274,6 +274,30 @@ void multi_msg_countdown()
 				multi_parse_turn(i, *(DWORD *)glpMsgTbl[i]);
 		}
 	}
+
+	char turn1[20] = "-";
+	char turn2[20] = "-";
+	char turn3[20] = "-";
+	char turn4[20] = "-";
+	if (glpMsgTbl[0] > 0)
+		snprintf(turn1, 20, "%d", *(DWORD *)glpMsgTbl[0]);
+	if (glpMsgTbl[1] > 0)
+		snprintf(turn2, 20, "%d", *(DWORD *)glpMsgTbl[1]);
+	if (glpMsgTbl[2] > 0)
+		snprintf(turn3, 20, "%d", *(DWORD *)glpMsgTbl[2]);
+	if (glpMsgTbl[3] > 0)
+		snprintf(turn4, 20, "%d", *(DWORD *)glpMsgTbl[3]);
+	turn1[19] = 0;
+	turn2[19] = 0;
+	turn3[19] = 0;
+	turn4[19] = 0;
+
+	extern DWORD StartTicks;
+	DWORD ticks = GetTickCount() - StartTicks;
+	char text[200];
+	snprintf(text, 200, "[%d] (%d) %s %s %s %s\n", ticks, GetCurrentProcessId(), turn1, turn2, turn3, turn4);
+	text[199] = 0;
+	OutputDebugString(text);
 }
 
 static void multi_player_left_msg(int pnum, int left)

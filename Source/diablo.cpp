@@ -56,6 +56,8 @@ BOOLEAN UseMultiTest;
 int sgnTimeoutCurs;
 char sgbMouseDown;
 int color_cycle_timer;
+BOOL BurstTurns;
+DWORD StartTicks;
 
 /* rdata */
 
@@ -310,6 +312,8 @@ static void start_game(unsigned int uMsg)
 {
 	zoomflag = TRUE;
 	cineflag = FALSE;
+	BurstTurns = FALSE;
+	StartTicks = GetTickCount();
 	InitCursor();
 	InitLightTable();
 	LoadDebugGFX();
@@ -660,8 +664,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	if (diablo_find_window("DIABLO"))
 		return 0;
 #endif
-	if (diablo_find_window(GAME_NAME) || !bNoEvent)
-		return 0;
+	//if (diablo_find_window(GAME_NAME) || !bNoEvent)
+	//	return 0;
 
 #ifdef _DEBUG
 	SFileEnableDirectAccess(TRUE);
@@ -1534,6 +1538,9 @@ static void PressChar(WPARAM vkey)
 			StoresCheat();
 		}
 		return;
+	case '.':
+		BurstTurns = TRUE;
+		break;
 #endif
 	}
 }

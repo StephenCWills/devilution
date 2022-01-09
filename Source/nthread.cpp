@@ -53,12 +53,24 @@ DWORD nthread_send_and_recv_turn(DWORD cur_turn, int turn_delta)
 		nthread_terminate_game("SNetGetTurnsInTransit");
 		return 0;
 	}
-	while (curTurnsInTransit++ < gdwTurnsInTransit) {
+	int fakeTurnsInTransit = gdwTurnsInTransit;
+	extern BOOL BurstTurns;
+	if (BurstTurns) {
+		fakeTurnsInTransit += 5;
+		BurstTurns = FALSE;
+	}
+	while (curTurnsInTransit++ < fakeTurnsInTransit) {
 
 		turn_tmp = turn_upper_bit | new_cur_turn & 0x7FFFFFFF;
 		turn_upper_bit = 0;
 		turn = turn_tmp;
 
+		extern DWORD StartTicks;
+		DWORD ticks = GetTickCount() - StartTicks;
+		char text[200];
+		snprintf(text, 200, "[%d] (%d) Sending turn %d\n", ticks, GetCurrentProcessId(), turn);
+		text[199] = 0;
+		OutputDebugString(text);
 		if (!SNetSendTurn((char *)&turn, sizeof(turn))) {
 			nthread_terminate_game("SNetSendTurn");
 			return 0;
