@@ -94,6 +94,106 @@ const char *const spszMsgTbl[4] = {
 /** INI files variable names for quick message keys */
 const char *const spszMsgHotKeyTbl[4] = { "F9", "F10", "F11", "F12" };
 
+static HANDLE DunFile(char *dst_path)
+{
+	BOOLEAN num_used[100];
+	int free_num, hFind;
+	struct _finddata_t finder;
+
+	memset(num_used, FALSE, sizeof(num_used));
+	hFind = _findfirst("export??.dun", &finder);
+	if (hFind != -1) {
+		do {
+			if (isdigit(finder.name[6]) && isdigit(finder.name[7])) {
+				free_num = 10 * (finder.name[6] - '0');
+				free_num += (finder.name[7] - '0');
+				num_used[free_num] = TRUE;
+			}
+		} while (_findnext(hFind, &finder) == 0);
+	}
+
+	for (free_num = 0; free_num < 100; free_num++) {
+		if (!num_used[free_num]) {
+			sprintf(dst_path, "export%02d.dun", free_num);
+			return CreateFile(dst_path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		}
+	}
+
+	return INVALID_HANDLE_VALUE;
+}
+
+static void WriteLE16(HANDLE file, unsigned short value)
+{
+	WriteFile(file, &value, 2, NULL, NULL);
+}
+
+static void ExportDun()
+{
+	HANDLE dunFile;
+	char fileName[MAX_PATH];
+
+	dunFile = DunFile(fileName);
+	if (dunFile != INVALID_HANDLE_VALUE) {
+
+		WriteLE16(dunFile, DMAXX);
+		WriteLE16(dunFile, DMAXY);
+
+		/** Tiles. */
+		for (int y = 0; y < DMAXY; y++) {
+			for (int x = 0; x < DMAXX; x++) {
+				WriteLE16(dunFile, dungeon[x][y]);
+			}
+		}
+
+		/** Padding */
+		for (int y = 16; y < MAXDUNY - 16; y++) {
+			for (int x = 16; x < MAXDUNX - 16; x++) {
+				WriteLE16(dunFile, 0);
+			}
+		}
+
+		/** Monsters */
+		for (int y = 16; y < MAXDUNY - 16; y++) {
+			for (int x = 16; x < MAXDUNX - 16; x++) {
+				unsigned short monsterId = 0;
+				if (dMonster[x][y] > 0) {
+					for (int i = 0; i < 157; i++) {
+						if (MonstConvTbl[i] == monster[dMonster[x][y] - 1].MType->mtype) {
+							monsterId = i + 1;
+							break;
+						}
+					}
+				}
+				WriteLE16(dunFile, monsterId);
+			}
+		}
+
+		/** Objects */
+		for (int y = 16; y < MAXDUNY - 16; y++) {
+			for (int x = 16; x < MAXDUNX - 16; x++) {
+				unsigned short objectId = 0;
+				if (dObject[x][y] > 0) {
+					for (int i = 0; i < 147; i++) {
+						if (ObjTypeConv[i] == object[dObject[x][y] - 1]._otype) {
+							objectId = i;
+							break;
+						}
+					}
+				}
+				WriteLE16(dunFile, objectId);
+			}
+		}
+
+		/** Transparency */
+		for (int y = 16; y < MAXDUNY - 16; y++) {
+			for (int x = 16; x < MAXDUNX - 16; x++) {
+				WriteLE16(dunFile, dTransVal[x][y]);
+			}
+		}
+		CloseHandle(dunFile);
+	}
+}
+
 static void diablo_parse_flags(char *args)
 {
 	char c;
@@ -2060,6 +2160,9 @@ void LoadGameLevel(BOOL firstflag, int lvldir)
 #else
 	music_start(leveltype);
 #endif
+
+	if (currlevel != 0)
+		ExportDun();
 
 	while (!IncProgress())
 		;
