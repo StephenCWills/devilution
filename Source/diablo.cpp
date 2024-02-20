@@ -1535,6 +1535,87 @@ static void PressChar(WPARAM vkey)
 			StoresCheat();
 		}
 		return;
+	case '/':
+		for (int i = 0; i < nobjects; ++i) {
+			int oi = objectactive[i];
+			switch (object[oi]._otype) {
+			case OBJ_CHEST1:
+			case OBJ_CHEST2:
+			case OBJ_CHEST3:
+			case OBJ_TCHEST1:
+			case OBJ_TCHEST2:
+			case OBJ_TCHEST3: {
+				char msg[200];
+				snprintf(msg, 200, "Operating chest %d\n", oi);
+				OutputDebugString(msg);
+			} break;
+			case OBJ_SARC: {
+				char msg[200];
+				snprintf(msg, 200, "Operating sarcophagus %d\n", oi);
+				OutputDebugString(msg);
+			} break;
+			case OBJ_WARWEAP:
+			case OBJ_WEAPONRACK: {
+				char msg[200];
+				snprintf(msg, 200, "Operating weapon rack %d\n", oi);
+				OutputDebugString(msg);
+			} break;
+			case OBJ_ARMORSTAND:
+			case OBJ_WARARMOR: {
+				char msg[200];
+				snprintf(msg, 200, "Operating armor stand %d\n", oi);
+				OutputDebugString(msg);
+			} break;
+			case OBJ_DECAP: {
+				char msg[200];
+				snprintf(msg, 200, "Operating corpse %d\n", oi);
+				OutputDebugString(msg);
+			} break;
+			case OBJ_SKELBOOK:
+			case OBJ_BOOKSTAND: {
+				char msg[200];
+				snprintf(msg, 200, "Operating tome %d\n", oi);
+				OutputDebugString(msg);
+			} break;
+			case OBJ_BOOKCASEL:
+			case OBJ_BOOKCASER: {
+				char msg[200];
+				snprintf(msg, 200, "Operating bookcase %d\n", oi);
+				OutputDebugString(msg);
+			} break;
+			case OBJ_BARREL: {
+				char msg[200];
+				snprintf(msg, 200, "Breaking barrel %d\n", oi);
+				OutputDebugString(msg);
+			} break;
+			default:
+				continue;
+			}
+			if (object[oi]._otype != OBJ_BARREL)
+				OperateObject(myplr, oi, FALSE);
+			else
+				BreakObject(myplr, oi);
+		}
+		for (int i = 0; i < nummonsters; ++i) {
+			int mi = monstactive[i];
+			char msg[200];
+			snprintf(msg, 200, "Killing monster %d\n", mi);
+			OutputDebugString(msg);
+			monster[mi]._mhitpoints = 0;
+			M_StartKill(mi, 0);
+		}
+		for (int i = 0; i < numitems; ++i) {
+			int ii = itemactive[i];
+			char msg[200];
+			snprintf(msg, 200, "Found item %s (%d)\n", item[ii]._iIName, item[ii]._iSeed);
+			OutputDebugString(msg);
+		}
+		{
+			char msg[200];
+			snprintf(msg, 200, "Cleared level %d\n", currlevel);
+			OutputDebugString(msg);
+		}
+		return;
 #endif
 	}
 }

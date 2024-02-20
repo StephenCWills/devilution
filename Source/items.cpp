@@ -3004,6 +3004,8 @@ void SpawnItem(int m, int x, int y, BOOL sendmsg)
 		numitems++;
 		if (sendmsg)
 			NetSendCmdDItem(FALSE, ii);
+	} else {
+		OutputDebugString("Failed to spawn item!!!\n");
 	}
 }
 
