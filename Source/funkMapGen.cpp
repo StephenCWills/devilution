@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
+#include <unordered_map>
 
 #include "../types.h"
 
@@ -457,7 +458,7 @@ void printHelp()
 	std::cout << "--verbose      Print out details about rejected seeds" << std::endl;
 }
 
-extern int SeedCount;
+extern int sglGameSeed;
 
 int main(int argc, char **argv)
 {
@@ -488,26 +489,33 @@ int main(int argc, char **argv)
 		}
 	}
 
-	int maxSeedCount = 0;
 	int seconds = time(NULL);
 	uint32_t prevseed = startSeed;
+	int targetseed = 0xDBDA229;
+	int currentseed = targetseed;
+	std::unordered_map<int, int> seedmap;
+	seedmap.emplace(targetseed, 0);
 	for (uint32_t seed = startSeed; seed < startSeed + seedCount; seed++) {
 		int elapsed = time(NULL) - seconds;
 		if (!quiet && elapsed >= 10) {
 			int pct = 100 * (seed - startSeed) / seedCount;
 			int speed = ((seed - prevseed) / 10);
 			int eta = (seedCount - (seed - startSeed)) / speed;
-			std::cerr << "Progress: " << pct << "% eta: " << eta << "s (" << speed << "seed/s)" << " Current seed count: " << maxSeedCount << std::endl;
+			std::cerr << "Progress: " << pct << "% eta: " << eta << "s (" << speed << "seed/s)" << std::endl;
 			seconds += elapsed;
 			prevseed = seed;
 		}
 
-		sgGameInitInfo.dwSeed = seed;
-		glSeedTbl[9] = seed;
+		currentseed = (currentseed - 1) * 690295837;
+		sgGameInitInfo.dwSeed = currentseed;
+		glSeedTbl[9] = currentseed;
 		currlevel = 9;
 		CreateL3Dungeon(glSeedTbl[currlevel], 0);
-		if (SeedCount > maxSeedCount)
-			maxSeedCount = SeedCount;
+		if (seedmap.contains(sglGameSeed)) {
+			std::cout << "Game Seed: 0x" << std::hex << currentseed << std::endl;
+			seedmap.emplace(currentseed, 0);
+			seed = startSeed;
+		}
 		continue;
 
 		lengthPathToDlvl9 = 0;
@@ -618,7 +626,6 @@ int main(int argc, char **argv)
 				ExportDun(seed);
 		}
 	}
-	std::cout << "Max seed count: " << maxSeedCount << std::endl;
 
 	return 0;
 }
