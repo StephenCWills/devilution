@@ -2322,9 +2322,14 @@ static void DRLG_L3(int entry)
 
 	lavapool = FALSE;
 
+	bool first = true;
+
 	do {
 		do {
 			do {
+				if (!first)
+					return;
+				first = false;
 				InitL3Dungeon();
 				x1 = random_(0, 20) + 10;
 				y1 = random_(0, 20) + 10;
@@ -2722,6 +2727,7 @@ void CreateL3Dungeon(DWORD rseed, int entry)
 	DRLG_InitTrans();
 	DRLG_InitSetPC();
 	DRLG_L3(entry);
+	return;
 	DRLG_L3Pass3();
 
 #ifdef HELLFIRE

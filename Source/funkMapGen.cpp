@@ -457,6 +457,8 @@ void printHelp()
 	std::cout << "--verbose      Print out details about rejected seeds" << std::endl;
 }
 
+extern int SeedCount;
+
 int main(int argc, char **argv)
 {
 	uint32_t startSeed = 0;
@@ -486,6 +488,7 @@ int main(int argc, char **argv)
 		}
 	}
 
+	int maxSeedCount = 0;
 	int seconds = time(NULL);
 	uint32_t prevseed = startSeed;
 	for (uint32_t seed = startSeed; seed < startSeed + seedCount; seed++) {
@@ -494,10 +497,18 @@ int main(int argc, char **argv)
 			int pct = 100 * (seed - startSeed) / seedCount;
 			int speed = ((seed - prevseed) / 10);
 			int eta = (seedCount - (seed - startSeed)) / speed;
-			std::cerr << "Progress: " << pct << "% eta: " << eta << "s (" << speed << "seed/s)" << std::endl;
+			std::cerr << "Progress: " << pct << "% eta: " << eta << "s (" << speed << "seed/s)" << " Current seed count: " << maxSeedCount << std::endl;
 			seconds += elapsed;
 			prevseed = seed;
 		}
+
+		sgGameInitInfo.dwSeed = seed;
+		glSeedTbl[9] = seed;
+		currlevel = 9;
+		CreateL3Dungeon(glSeedTbl[currlevel], 0);
+		if (SeedCount > maxSeedCount)
+			maxSeedCount = SeedCount;
+		continue;
 
 		lengthPathToDlvl9 = 0;
 		seedSelection(seed);
@@ -607,6 +618,7 @@ int main(int argc, char **argv)
 				ExportDun(seed);
 		}
 	}
+	std::cout << "Max seed count: " << maxSeedCount << std::endl;
 
 	return 0;
 }
