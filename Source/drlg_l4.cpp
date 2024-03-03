@@ -1580,10 +1580,14 @@ static void DRLG_L4(int entry)
 {
 	int i, j, spi, spj, ar;
 	BOOL doneflag;
+	bool first = true;
 
 	do {
 		DRLG_InitTrans();
 		do {
+			if (!first)
+				return;
+			first = false;
 			InitL4Dungeon();
 			L4firstRoom();
 			L4FixRim();
@@ -1688,6 +1692,9 @@ static void DRLG_L4(int entry)
 			}
 		}
 	} while (!doneflag);
+
+	SetRndSeed(glSeedTbl[currlevel]);
+	return;
 
 	DRLG_L4GeneralFix();
 
@@ -1846,8 +1853,9 @@ void CreateL4Dungeon(DWORD rseed, int entry)
 	DRLG_InitSetPC();
 	DRLG_LoadL4SP();
 	DRLG_L4(entry);
-	DRLG_L4Pass3();
+	//DRLG_L4Pass3();
 	DRLG_FreeL4SP();
+	return;
 	DRLG_SetPC();
 }
 #endif

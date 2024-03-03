@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <format>
+#include <fstream>
 #include <iostream>
 #include <iomanip>
 
@@ -65,7 +67,7 @@ bool oobwrite = false;
 
 BYTE GetDungeon(int x, int y)
 {
-	if (x < 0 || y < 0 || x >= MAXDUNX || y >= MAXDUNY) {
+	if (x < 0 || y < 0 || x >= DMAXX || y >= DMAXY) {
 		oobread = true;
 		return 0;
 	}
@@ -74,7 +76,7 @@ BYTE GetDungeon(int x, int y)
 
 void SetDungeon(int x, int y, BYTE value)
 {
-	if (x < 0 || y < 0 || x >= MAXDUNX || y >= MAXDUNY) {
+	if (x < 0 || y < 0 || x >= DMAXX || y >= DMAXY) {
 		oobwrite = true;
 		return;
 	}
@@ -89,24 +91,23 @@ static int InitLevelType(int l)
 		return DTYPE_CATACOMBS;
 	if (l >= 9 && l <= 12)
 		return DTYPE_CAVES;
-
-	return DTYPE_HELL;
+	if (l >= 13 && l <= 16)
+		return DTYPE_HELL;
+	return DTYPE_NONE;
 }
 
 void whatleveltype()
 {
-	switch (currlevel) {
-	case 1:
-		leveltype = DTYPE_CATHEDRAL;
-		break;
-	case 5:
-		leveltype = DTYPE_CATACOMBS;
-		break;
-	case 9:
-		leveltype = DTYPE_CAVES;
-		break;
-	case 13:
-		leveltype = DTYPE_HELL;
+	int currleveltype = InitLevelType(currlevel);
+	if (currleveltype == leveltype)
+		return;
+
+	switch (currleveltype) {
+	case DTYPE_CATHEDRAL:
+	case DTYPE_CATACOMBS:
+	case DTYPE_CAVES:
+	case DTYPE_HELL:
+		leveltype = currleveltype;
 		break;
 	default:
 		return;
@@ -450,21 +451,34 @@ void printHelp()
 {
 	std::cout << "--help         Print this message and exit" << std::endl;
 	std::cout << "--quiet        Do not print to console" << std::endl;
-	std::cout << "--export       Export levels as .dun files" << std::endl;
-	std::cout << "--start <#>    The seed to start from" << std::endl;
-	std::cout << "--count <#>    The number of seeds to process" << std::endl;
-	std::cout << "--quality <#>  Number of levels that must be good (default 4)" << std::endl;
-	std::cout << "--verbose      Print out details about rejected seeds" << std::endl;
+	std::cout << "--dlvl <#>     Dungeon level for which to generate lookup table" << std::endl;
+	std::cout << "--quest <#>    Quest to be activated" << std::endl;
+}
+
+extern int sglGameSeed;
+
+std::string GetMapFilename(int dlvl)
+{
+	std::string queststr;
+	for (int i = 0; i < MAXQUESTS; i++) {
+		if (quests[i]._qlevel == dlvl && quests[i]._qactive != QUEST_NOTAVAIL)
+			queststr += "q" + std::to_string(i);
+	}
+	return std::format("dlvl{}{}.map", dlvl, queststr);
 }
 
 int main(int argc, char **argv)
 {
-	uint32_t startSeed = 0;
-	uint32_t seedCount = 1;
+	const uint64_t MaxSeed = 0x100000000U;
+
+	uint64_t startSeed = 0;
+	uint64_t seedCount = MaxSeed;
+	int part = -1;
 	bool quiet = false;
-	bool exportLevels = false;
-	int quality = 4;
-	bool verbose = false;
+
+	InitQuests();
+	for (int i = 0; i < MAXQUESTS; i++)
+		quests[i]._qactive = QUEST_NOTAVAIL;
 
 	for (int i = 0; i < argc; i++) {
 		std::string arg = argv[i];
@@ -473,22 +487,37 @@ int main(int argc, char **argv)
 			return 0;
 		} else if (arg == "--quiet") {
 			quiet = true;
-		} else if (arg == "--export") {
-			exportLevels = true;
 		} else if (arg == "--start" && argc >= i + 1) {
 			startSeed = std::stoll(argv[i + 1]);
 		} else if (arg == "--count" && argc >= i + 1) {
 			seedCount = std::stoll(argv[i + 1]);
-		} else if (arg == "--quality" && argc >= i + 1) {
-			quality = std::stoi(argv[i + 1]);
-		} else if (arg == "--verbose") {
-			verbose = true;
+		} else if (arg == "--part" && argc >= i + 1) {
+			part = std::stoi(argv[i + 1]);
+		} else if (arg == "--dlvl" && argc >= i + 1) {
+			currlevel = std::stoi(argv[i + 1]);
+		} else if (arg == "--quest" && argc >= i + 1) {
+			quests[std::stoi(argv[i + 1])]._qactive = QUEST_INIT;
 		}
 	}
 
+	std::string filename = GetMapFilename(currlevel);
+	if (part >= 0) {
+		filename += std::format(".part{}", part);
+		startSeed = seedCount * part;
+	}
+
+	std::ofstream file(filename, std::ios_base::binary);
+	if (!file.is_open()) {
+		std::cout << "Error opening file for writing" << std::endl;
+		exit(1);
+	}
+
+	whatleveltype();
+
 	int seconds = time(NULL);
-	uint32_t prevseed = startSeed;
-	for (uint32_t seed = startSeed; seed < startSeed + seedCount; seed++) {
+	uint64_t prevseed = startSeed;
+	seedCount = std::min(seedCount, MaxSeed - startSeed);
+	for (uint64_t seed = startSeed; seed < startSeed + seedCount; seed++) {
 		int elapsed = time(NULL) - seconds;
 		if (!quiet && elapsed >= 10) {
 			int pct = 100 * (seed - startSeed) / seedCount;
@@ -499,113 +528,10 @@ int main(int argc, char **argv)
 			prevseed = seed;
 		}
 
-		lengthPathToDlvl9 = 0;
-		seedSelection(seed);
-		InitQuests();
-		if (quests[Q_LTBANNER]._qactive != QUEST_NOTAVAIL) {
-			if (verbose)
-				std::cout << "Game Seed: " << sgGameInitInfo.dwSeed << " thrown out: Sign Quest" << std::endl;
-			continue;
-		}
-		if (quests[Q_WARLORD]._qactive != QUEST_NOTAVAIL) {
-			if (verbose)
-				std::cout << "Game Seed: " << sgGameInitInfo.dwSeed << " thrown out: Warlord" << std::endl;
-			continue;
-		}
-
-		{
-			currlevel = 9;
-			whatleveltype();
-			createSpecificDungeon();
-			InitStairCordinates();
-
-			InitLevelMonsters();
-			SetRndSeed(glSeedTbl[currlevel]);
-			GetLevelMTypes();
-			InitThemes();
-
-			SetRndSeed(glSeedTbl[currlevel]);
-			HoldThemeRooms();
-			GetRndSeed();
-			InitMonsters();
-			GetRndSeed();
-			InitObjects();
-			InitItems();
-			CreateThemeRooms();
-
-			int monsterItems = numitems;
-			for (int i = 0; i < nummonsters; i++) {
-				int mid = monstactive[i];
-				if (monster[mid].MType->mtype == MT_GOLEM)
-					continue;
-				SetRndSeed(monster[mid]._mRndSeed);
-				SpawnItem(mid, monster[mid]._mx, monster[mid]._my, TRUE);
-			}
-
-			int objectItems = numitems;
-			for (int i = 0; i < nobjects; i++) {
-				int oid = objectactive[i];
-				createItemsFromObject(oid);
-			}
-
-			bool foundPuzzler = false;
-			for (int i = 0; i < numitems; i++) {
-				int ii = itemactive[i];
-				foundPuzzler |= item[ii]._iMagical == ITEM_QUALITY_UNIQUE && item[ii]._iUid == 60;
-			}
-			if (!foundPuzzler)
-				continue;
-
-			if (!quiet) {
-				std::cout << "Monster Count: " << nummonsters << std::endl;
-				for (int i = 0; i < nummonsters; i++) {
-					std::cout << "Monster " << i << ": " << monster[monstactive[i]].mName << " (" << monster[monstactive[i]]._mRndSeed << ")" << std::endl;
-				}
-				std::cout << std::endl;
-				std::cout << "Object Count: " << nobjects << std::endl;
-				for (int i = 0; i < nobjects; i++) {
-					int oid = objectactive[i];
-					char objstr[50];
-					GetObjectStr(oid, objstr);
-					std::cout << "Object " << i << ": " << objstr << " (" << object[oid]._oRndSeed << ")" << std::endl;
-				}
-				std::cout << std::endl;
-				std::cout << "Item Count: " << numitems << std::endl;
-				for (int i = 0; i < numitems; i++) {
-					std::string prefix = "";
-					if (i >= objectItems)
-						prefix = "Object ";
-					else if (i >= monsterItems)
-						prefix = "Monster ";
-					std::cout << prefix << "Item " << i << ": " << item[itemactive[i]]._iIName << " (" << item[itemactive[i]]._iSeed << ")" << std::endl;
-				}
-			}
-			if (exportLevels)
-				ExportDun(seed);
-		}
-
-		for (int level = 9; level < NUMLEVELS; level++) {
-			currlevel = level;
-			whatleveltype();
-			createSpecificDungeon();
-			InitStairCordinates();
-
-			if (!IsGoodLevel()) {
-				if (level > quality || verbose) {
-					std::cout << "Game Seed: " << sgGameInitInfo.dwSeed << " quality: ";
-					for (int p = 0; p < level - 1; p++) {
-						std::cout << "+";
-					}
-					std::cout << " (" << (level - 1) << ")" << std::endl;
-					break;
-				}
-				break;
-			}
-			if (!quiet)
-				printAsciiLevel();
-			if (exportLevels)
-				ExportDun(seed);
-		}
+		sgGameInitInfo.dwSeed = seed;
+		glSeedTbl[currlevel] = seed;
+		createSpecificDungeon();
+		file.write(reinterpret_cast<const char *>(&sglGameSeed), sizeof(int));
 	}
 
 	return 0;

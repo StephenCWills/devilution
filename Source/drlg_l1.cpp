@@ -2621,10 +2621,16 @@ static void DRLG_L5(int entry)
 #endif
 	}
 
+	bool first = true;
+
 	do {
 		DRLG_InitTrans();
 
 		do {
+			if (!first) {
+				return;
+			}
+			first = false;
 			InitL5Dungeon();
 			L5firstRoom();
 		} while (L5GetArea() < minarea);
@@ -2741,6 +2747,9 @@ static void DRLG_L5(int entry)
 #endif
 		}
 	} while (doneflag == FALSE);
+
+	SetRndSeed(glSeedTbl[currlevel]);
+	return;
 
 	for (j = 0; j < DMAXY; j++) {
 		for (i = 0; i < DMAXX; i++) {
@@ -2869,8 +2878,9 @@ void CreateL5Dungeon(DWORD rseed, int entry)
 	DRLG_InitSetPC();
 	DRLG_LoadL1SP();
 	DRLG_L5(entry);
-	DRLG_L1Pass3();
+	//DRLG_L1Pass3();
 	DRLG_FreeL1SP();
+	return;
 
 #ifdef HELLFIRE
 	if (currlevel < 17)

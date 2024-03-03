@@ -1625,6 +1625,13 @@ int Patterns[100][10] = {
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
 
+static BYTE GetPreDungeon(int x, int y)
+{
+	if (x < 0 || y < 0 || x >= DMAXX || y >= DMAXY)
+		return 0;
+	return predungeon[x][y];
+}
+
 static BOOL DRLG_L2PlaceMiniSet(BYTE *miniset, int tmin, int tmax, int cx, int cy, BOOL setview, int ldir)
 {
 	int sx, sy, sw, sh, xx, yy, i, ii, numt, bailcnt;
@@ -2808,19 +2815,19 @@ static BOOL CreateDungeon()
 
 	for (j = 0; j <= DMAXY; j++) {     /// BUGFIX: change '<=' to '<'
 		for (i = 0; i <= DMAXX; i++) { /// BUGFIX: change '<=' to '<'
-			if (predungeon[i][j] == 67) {
+			if (GetPreDungeon(i, j) == 67) {
 				predungeon[i][j] = 35;
 			}
-			if (predungeon[i][j] == 66) {
+			if (GetPreDungeon(i, j) == 66) {
 				predungeon[i][j] = 35;
 			}
-			if (predungeon[i][j] == 69) {
+			if (GetPreDungeon(i, j) == 69) {
 				predungeon[i][j] = 35;
 			}
-			if (predungeon[i][j] == 65) {
+			if (GetPreDungeon(i, j) == 65) {
 				predungeon[i][j] = 35;
 			}
-			if (predungeon[i][j] == 44) {
+			if (GetPreDungeon(i, j) == 44) {
 				predungeon[i][j] = 46;
 				if (predungeon[i - 1][j - 1] == 32) {
 					predungeon[i - 1][j - 1] = 35;
@@ -3163,9 +3170,13 @@ static void DRLG_L2(int entry)
 {
 	int i, j;
 	BOOL doneflag;
+	bool first = true;
 
 	doneflag = FALSE;
 	while (!doneflag) {
+		if (!first)
+			return;
+		first = false;
 		nRoomCnt = 0;
 		InitDungeon();
 		DRLG_InitTrans();
@@ -3207,6 +3218,9 @@ static void DRLG_L2(int entry)
 			ViewY -= 2;
 		}
 	}
+
+	SetRndSeed(glSeedTbl[currlevel]);
+	return;
 
 	L2LockoutFix();
 	L2DoorFix();
@@ -3544,8 +3558,9 @@ void CreateL2Dungeon(DWORD rseed, int entry)
 	DRLG_InitSetPC();
 	DRLG_LoadL2SP();
 	DRLG_L2(entry);
-	DRLG_L2Pass3();
+	//DRLG_L2Pass3();
 	DRLG_FreeL2SP();
+	return;
 	DRLG_InitL2Vals();
 	DRLG_SetPC();
 }
