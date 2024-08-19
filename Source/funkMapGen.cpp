@@ -10,6 +10,7 @@
 #include <string_view>
 #include <vector>
 
+#include "analyzer/decorations.h"
 #include "analyzer/gameseed.h"
 #include "analyzer/path.h"
 #include "analyzer/pattern.h"
@@ -73,6 +74,8 @@ void InitEngine()
 		scanner = new ScannerPattern();
 	} else if (Config.scanner == Scanners::GameSeed) {
 		scanner = new ScannerGameSeed();
+	} else if (Config.scanner == Scanners::Decorations) {
+		scanner = new ScannerDecorations();
 	}
 }
 
@@ -208,12 +211,14 @@ void SetGameSeed(uint32_t seed)
 {
 	sgGameInitInfo.dwSeed = seed;
 	SetRndSeed(sgGameInitInfo.dwSeed);
+	SetRndSeed(1231954092);
 
 	for (int i = 0; i < NUMLEVELS; i++) {
 		glSeedTbl[i] = GetRndSeed();
 	}
 
 	InitQuests();
+	quests[Q_LTBANNER]._qactive = QUEST_NOTAVAIL;
 	memset(UniqueItemFlag, 0, sizeof(UniqueItemFlag));
 }
 

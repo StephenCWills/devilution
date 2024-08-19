@@ -2819,6 +2819,7 @@ static std::optional<uint32_t> DRLG_L5(int entry, DungeonMode mode)
 		}
 	}
 #else
+	SetRndSeed(sgGameInitInfo.dwSeed);
 	DRLG_L5Subs();
 #endif
 
@@ -2879,8 +2880,8 @@ std::optional<uint32_t> CreateL5Dungeon(DWORD rseed, int entry, DungeonMode mode
 		DRLG_FreeL1SP();
 		return levelSeed;
 	}
-	if (levelSeed)
-		DRLG_L1Pass3();
+	//if (levelSeed)
+	//	DRLG_L1Pass3();
 	DRLG_FreeL1SP();
 
 #ifdef HELLFIRE
@@ -2904,8 +2905,8 @@ std::optional<uint32_t> CreateL5Dungeon(DWORD rseed, int entry, DungeonMode mode
 		}
 	}
 #else
-	DRLG_InitL1Vals();
-	DRLG_SetPC();
+	//DRLG_InitL1Vals();
+	//DRLG_SetPC();
 #endif
 
 	return levelSeed;
