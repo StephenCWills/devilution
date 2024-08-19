@@ -10,7 +10,7 @@
 #include "../quests.h"
 
 #define TEMPLATEX 8
-#define TEMPLATEY 9
+#define TEMPLATEY 10
 
 const uint8_t GROOBO1[TEMPLATEX][TEMPLATEY] = {
 	// clang-format off
@@ -51,16 +51,29 @@ const uint8_t GROOBO3[TEMPLATEX][TEMPLATEY] = {
 	// clang-format on
 };
 
+//const uint8_t GROOBO4[TEMPLATEX][TEMPLATEY] = {
+//	// clang-format off
+//    {   0,  0, 66,  0,  0,  0,  0,122,  0 },
+//    {   0, 63, 64, 65,  0,  0,  0,  0,  0 },
+//    {   0,  0, 67, 68, 62, 57, 58,  0,  0 },
+//    {   0,  0,  0,  0, 61, 59, 60,  0,  0 },
+//    { 107,  0,  0,  0,  0,  0,  0,  0,  0 },
+//    {   0,  0,  0,  0,  0,  0,  0,  0,  0 },
+//    {   0,  0,  0,  0,  0,  0,  0,  0,  0 },
+//    {   0,  0,  0,  0,  0,  0,  0,  0,  0 },
+//	// clang-format on
+//};
+
 const uint8_t GROOBO4[TEMPLATEX][TEMPLATEY] = {
 	// clang-format off
-    {   0,  0, 66,  0,  0,  0,  0,122,  0 },
-    {   0, 63, 64, 65,  0,  0,  0,  0,  0 },
-    {   0,  0, 67, 68, 62, 57, 58,  0,  0 },
-    {   0,  0,  0,  0, 61, 59, 60,  0,  0 },
-    { 107,  0,  0,  0,  0,  0,  0,  0,  0 },
-    {   0,  0,  0,  0,  0,  0,  0,  0,  0 },
-    {   0,  0,  0,  0,  0,  0,  0,  0,  0 },
-    {   0,  0,  0,  0,  0,  0,  0,  0,  0 },
+    {   0, 22, 66, 23, 22, 22, 22,  1,  0,  0 },
+    {   4, 63, 64, 65,  2,  2,  2, 16, 13,  0 },
+    {   1, 13, 67, 68, 62, 57, 58, 13, 13,  0 },
+    {   1, 13, 13, 13, 61, 59, 60, 13, 13,  0 },
+    {   1, 13, 13, 13, 13, 13, 13, 13, 13,  0 },
+    {   0, 13, 13, 13, 13, 13, 13, 13, 13,  0 },
+    {   0, 19, 19, 19, 19, 19, 19, 19, 19, 19 },
+    {   0,  0,  0,  0,  0,  0,  0,  0,  0,  0 },
 	// clang-format on
 };
 
@@ -236,7 +249,7 @@ DungeonMode ScannerPattern::getDungeonMode()
 	if (UseSolidScanner(currlevel))
 		return DungeonMode::BreakOnFailureOrNoContent;
 
-	return DungeonMode::BreakOnFailure;
+	return DungeonMode::BreakOnSuccess;
 }
 
 void ForceSeeds(int level)
@@ -249,7 +262,7 @@ void ForceSeeds(int level)
 	quests[Q_SKELKING]._qactive = QUEST_NOTAVAIL; // QUEST_INIT;
 	glSeedTbl[3] = sgGameInitInfo.dwSeed;
 	quests[Q_LTBANNER]._qactive = QUEST_NOTAVAIL;
-	glSeedTbl[4] = sgGameInitInfo.dwSeed;
+	//glSeedTbl[4] = sgGameInitInfo.dwSeed;
 
 	// Catacombs
 	quests[Q_BLOOD]._qactive = QUEST_INIT;
@@ -550,7 +563,7 @@ bool matchesTilePattern(std::optional<uint32_t> levelSeed)
 			return false;
 	}
 
-	std::cout << "Level Seed for dlvl " << (int)currlevel << ": " << *levelSeed << std::endl;
+	std::cout << "Game Seed for dlvl " << (int)currlevel << ": " << sgGameInitInfo.dwSeed << std::endl;
 
 	return true;
 }
