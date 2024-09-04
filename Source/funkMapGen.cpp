@@ -211,7 +211,6 @@ void SetGameSeed(uint32_t seed)
 {
 	sgGameInitInfo.dwSeed = seed;
 	SetRndSeed(sgGameInitInfo.dwSeed);
-	SetRndSeed(1231954092);
 
 	for (int i = 0; i < NUMLEVELS; i++) {
 		glSeedTbl[i] = GetRndSeed();
